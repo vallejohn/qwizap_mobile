@@ -17,6 +17,8 @@ class GenerateRepositoryImpl implements GenerateRepository {
       return Right(data);
     } on ApiException catch (e) {
       return Left(Failure.apiException(e));
+    }catch(e){
+      return Left(Failure.apiException(ApiException(message: e.toString())));
     }
   }
 
