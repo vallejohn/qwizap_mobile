@@ -1,0 +1,65 @@
+{
+  "categories": [
+    {
+      "name": "General Knowledge"
+    },
+    {
+      "name": "Science",
+      "subcategories": ["Physics", "Chemistry", "Biology"]
+    },
+    {
+      "name": "Mathematics",
+      "subcategories": ["Algebra", "Geometry", "Calculus"]
+    },
+    {
+      "name": "History",
+      "subcategories": ["World History", "Ancient Civilizations", "Modern History"]
+    },
+    {
+      "name": "Geography",
+      "subcategories": ["World Geography", "Countries and Capitals", "Landforms and Oceans"]
+    },
+    {
+      "name": "Literature",
+      "subcategories": ["Classic Literature", "Modern Fiction", "Poetry"]
+    },
+    {
+      "name": "Technology",
+      "subcategories": ["Programming", "Artificial Intelligence", "Gadgets and Innovations"]
+    },
+    {
+      "name": "Entertainment",
+      "subcategories": ["Movies", "Music", "Television Shows"]
+    },
+    {
+      "name": "Sports",
+      "subcategories": ["Soccer", "Basketball", "Olympic Games"]
+    },
+    {
+      "name": "Pop Culture",
+      "subcategories": ["Celebrities", "Social Media", "Memes"]
+    },
+    {
+      "name": "Art & Architecture"
+    },
+    {
+      "name": "Health & Medicine"
+    },
+    {
+      "name": "Languages & Linguistics"
+    },
+    {
+      "name": "Business & Economics"
+    },
+    {
+      "name": "Mythology & Folklore"
+    },
+    {
+      "name": "Philosophy & Ethics"
+    },
+    {
+      "name": "Trivia",
+      "subcategories": ["Fun Facts", "Riddles", "Odd Facts"]
+    }
+  ]
+}

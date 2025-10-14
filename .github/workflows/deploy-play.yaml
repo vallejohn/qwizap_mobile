@@ -15,11 +15,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Create .env file
+        run: echo "${{ secrets.ENV_FILE }}" > .env
+
       # 2️⃣ Set up Flutter
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.32.8'  # change if needed
+
+      - name: Generate models
+        run: flutter pub run build_runner build --delete-conflicting-outputs
 
       # 3️⃣ Decode your keystore from Base64
       - name: Decode keystore
