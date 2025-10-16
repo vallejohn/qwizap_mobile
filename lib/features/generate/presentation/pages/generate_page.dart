@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:smooth_corner/smooth_corner.dart';
 import '../../../../core/di/setup_locator.dart';
+import '../../../../core/services/admob_service.dart';
 import '../../../../src/qwizap/presentation/blocs/timer/timer_bloc.dart';
 import '../../core/params/generate_params.dart';
 import '../bloc/generate_bloc.dart';
@@ -17,6 +19,19 @@ class GeneratePage extends StatefulWidget {
 
 class _GeneratePageState extends State<GeneratePage> {
   final int _duration = 60;
+  BannerAd? _bannerAd;
+
+  @override
+  void initState() {
+    super.initState();
+    _bannerAd = AdMobService.instance.createBannerAd();
+  }
+
+  @override
+  void dispose() {
+    _bannerAd?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -303,6 +318,10 @@ class _GeneratePageState extends State<GeneratePage> {
                 ),
               );
             }),
+            const SizedBox(height: 20,),
+            _bannerAd == null
+                ? const SizedBox.shrink()
+                : AdMobService.instance.bannerAdWidget(_bannerAd!),
             const SizedBox(
               height: 100,
             ),

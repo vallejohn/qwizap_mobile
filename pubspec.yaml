@@ -49,6 +49,7 @@ dependencies:
   dio: ^5.9.0
   flutter_dotenv: ^6.0.0
   flutter_launcher_icons: ^0.14.4
+  google_mobile_ads: ^6.0.0
 
 dev_dependencies:
   flutter_test:
