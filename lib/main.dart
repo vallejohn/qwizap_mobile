@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:logger/logger.dart';
 import 'package:qwizap_mobile/core/di/setup_locator.dart';
 import 'package:qwizap_mobile/question_proper.dart';
@@ -30,6 +31,8 @@ void main() async {
   ));
 
   await setupLocator();
+
+  await MobileAds.instance.initialize();
 
   runApp(const MyApp());
 }
