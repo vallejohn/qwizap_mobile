@@ -1,8 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:logger/logger.dart';
 import 'package:qwizap_mobile/src/qwizap/data/models/question_model.dart';
 import '../../core/params/generate_params.dart';
-import '../../data/models/generate_model.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../domain/usecases/generate_usecase.dart';
@@ -16,6 +16,8 @@ class GenerateBloc extends Bloc<GenerateEvent, GenerateState> {
   final _createUseCase = GetIt.instance<GenerateCreateUseCase>();
   final _updateUseCase = GetIt.instance<GenerateUpdateUseCase>();
   final _deleteUseCase = GetIt.instance<GenerateDeleteUseCase>();
+  final _saveScoreUseCase = GetIt.instance<GenerateSaveScoreUseCase>();
+  final _logger = Logger();
 
   GenerateBloc() : super(const GenerateState()) {
     on<_Fetch>(_onFetch);
@@ -41,6 +43,7 @@ class GenerateBloc extends Bloc<GenerateEvent, GenerateState> {
           fetchStatus: GenerateFetchStatus.success,
           data: data.data?? [],
           currentQuestion: data.data?.first,
+          category: event.param.category,
         ),
       ),
     );
@@ -55,30 +58,64 @@ class GenerateBloc extends Bloc<GenerateEvent, GenerateState> {
       final nextQuestion = state.data[nextIndex];
       emit(state.copyWith(currentQuestion: nextQuestion));
     }else{
+      // Calculate total score and save it
+      final totalScore = state.data.fold(0, (total, q) => total + q.score);
+      
+      // Save score if category is not empty
+      if (state.category.isNotEmpty) {
+        final saveResult = await _saveScoreUseCase(
+          GenerateSaveScoreParams(
+            category: state.category,
+            score: totalScore,
+          ),
+        );
+        // Log error but don't block UI flow if score saving fails
+        saveResult.fold(
+          (error) => null, // Error handling can be added here if needed
+          (success) => null,
+        );
+      }
+      
       emit(state.copyWith(
         fetchStatus: GenerateFetchStatus.finished,
+        totalScore: totalScore,
       ));
     }
   }
 
   Future<void> _onAnswerSelected(
       _OnAnswerSelected event, Emitter<GenerateState> emit)async {
-    int baseScore = 100;
+    const int baseScore = 100;
+    const int maxTimeScore = 100; // Maximum bonus for answering quickly
     Question currentQuestion =
     state.currentQuestion!.copyWith(selectedAnswer: event.answer);
 
     ///Calculate score
     bool correctAnswer =
         currentQuestion.selectedAnswer == currentQuestion.answer;
-    double itemCompletionRate = (event.remainingTime / event.duration) * 100;
-    double timeScore = ((itemCompletionRate / 100) * baseScore);
-
-    int totalItemScore = !correctAnswer
-        ? 0
-        : int.parse((baseScore + timeScore).toStringAsFixed(0));
-
-    if(correctAnswer){
-
+    
+    int totalItemScore = 0;
+    
+    if (correctAnswer) {
+      // Clamp remainingTime to valid range [0, duration]
+      final clampedRemainingTime = event.remainingTime.clamp(0, event.duration);
+      
+      _logger.d('Scoring calculation - remainingTime: ${event.remainingTime}, clamped: $clampedRemainingTime, duration: ${event.duration}');
+      
+      // Calculate elapsed time percentage of total duration
+      final elapsedTime = event.duration - clampedRemainingTime;
+      final elapsedTimePercentage = (elapsedTime / event.duration) * 100;
+      
+      // Use the elapsed time percentage to calculate the time score
+      // Since we want to reward faster answers, we use remaining time percentage
+      // which is the inverse of elapsed time percentage
+      final remainingTimePercentage = 100 - elapsedTimePercentage;
+      final timeScore = (remainingTimePercentage / 100) * maxTimeScore;
+      totalItemScore = int.parse((baseScore + timeScore).toStringAsFixed(0));
+      
+      _logger.i('Scoring - elapsedTime: $elapsedTime, elapsedTimePercentage: ${elapsedTimePercentage.toStringAsFixed(2)}%, remainingTimePercentage: ${remainingTimePercentage.toStringAsFixed(2)}%, timeScore: ${timeScore.toStringAsFixed(2)}, totalItemScore: $totalItemScore');
+    } else {
+      _logger.d('Incorrect answer - score: 0');
     }
 
     currentQuestion = currentQuestion.copyWith(score: totalItemScore);

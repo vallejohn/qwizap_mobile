@@ -1,23 +1,14 @@
-import 'dart:convert';
-import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:logger/logger.dart';
 import 'package:qwizap_mobile/core/di/setup_locator.dart';
-import 'package:qwizap_mobile/question_proper.dart';
-import 'package:qwizap_mobile/src/qwizap/data/models/question_model.dart';
-import 'package:qwizap_mobile/src/qwizap/presentation/blocs/category_selection/category_selection_bloc.dart';
-import 'package:qwizap_mobile/src/qwizap/presentation/blocs/quiz/quiz_bloc.dart';
 import 'package:qwizap_mobile/src/qwizap/presentation/blocs/timer/timer_bloc.dart';
 import 'package:smooth_corner/smooth_corner.dart';
 
 import 'app_bloc_observer.dart';
 import 'core/router/app_router.dart';
-import 'core/services/level_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,20 +41,11 @@ class _MyAppState extends State<MyApp> {
     const primaryColor = Color(0xff004148);
     const secondaryColor = Color(0xFFFF1900);
 
-    final levelManager = LevelManager();
-    levelManager.initLevel();
-
     return MultiBlocProvider(
       providers: [
-        BlocProvider<QuizBloc>(
-          create: (context) => QuizBloc(levelManager: levelManager),
-        ),
         BlocProvider<TimerBloc>(
           create: (context) => TimerBloc(Ticker()),
         ),
-        BlocProvider<CategorySelectionBloc>(
-          create: (context) => CategorySelectionBloc(),
-        )
       ],
       child: MaterialApp.router(
         title: 'Flutter Demo',

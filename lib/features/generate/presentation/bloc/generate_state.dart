@@ -15,7 +15,8 @@ class GenerateState with _$GenerateState {
     @Default('') String message,
     @Default([]) List<Question> data,
     Question? currentQuestion,
-    @Default(0) int totalScore
+    @Default(0) int totalScore,
+    @Default('') String category,
   }) = _GenerateState;
 }
 

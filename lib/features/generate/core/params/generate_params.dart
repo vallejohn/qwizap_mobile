@@ -2,7 +2,6 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:qwizap_mobile/src/qwizap/data/models/question_model.dart';
 
 import '../../../../core/models/operation_result.dart';
-import '../../data/models/generate_model.dart';
 part 'generate_params.freezed.dart';
 part 'generate_params.g.dart';
 
@@ -51,6 +50,17 @@ class GenerateDeleteParams with _$GenerateDeleteParams {
 
   factory GenerateDeleteParams.fromJson(Map<String, dynamic> json) =>
       _$GenerateDeleteParamsFromJson(json);
+}
+
+@freezed
+class GenerateSaveScoreParams with _$GenerateSaveScoreParams {
+  const factory GenerateSaveScoreParams({
+    required String category,
+    required int score,
+  }) = _GenerateSaveScoreParams;
+
+  factory GenerateSaveScoreParams.fromJson(Map<String, dynamic> json) =>
+      _$GenerateSaveScoreParamsFromJson(json);
 }
 
 

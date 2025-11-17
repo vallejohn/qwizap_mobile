@@ -2,7 +2,6 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:qwizap_mobile/src/qwizap/data/models/question_category.dart';
 
 import '../../../../core/models/operation_result.dart';
-import '../../data/models/categories_model.dart';
 part 'categories_params.freezed.dart';
 part 'categories_params.g.dart';
 

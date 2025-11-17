@@ -51,5 +51,17 @@ class GenerateRepositoryImpl implements GenerateRepository {
       return Left(Failure.apiException(e));
     }
   }
+
+  @override
+  Future<Either<Failure, bool>> saveScore(GenerateSaveScoreParams param) async {
+    try {
+      final data = await dataSource.saveScore(param);
+      return Right(data);
+    } on ApiException catch (e) {
+      return Left(Failure.apiException(e));
+    } catch (e) {
+      return Left(Failure.apiException(ApiException(message: e.toString())));
+    }
+  }
 }
 

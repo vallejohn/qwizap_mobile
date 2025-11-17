@@ -11,11 +11,15 @@ import '../../features/generate/data/datasources/generate_remote_data_source.dar
 import '../../features/generate/data/repositories/generate_repository_impl.dart';
 import '../../features/generate/domain/repositories/generate_repository.dart';
 import '../../features/generate/presentation/bloc/generate_bloc.dart';
+import '../services/score_storage_service.dart';
 
 final sl = GetIt.instance;
 
 Future<void> setupLocator() async {
   // Register dependencies here
+
+  // services
+  sl.registerLazySingleton(() => ScoreStorageService());
 
   // categories registrations
   sl.registerLazySingleton<CategoriesRemoteDataSource>(
@@ -46,6 +50,7 @@ Future<void> setupLocator() async {
   sl.registerLazySingleton(() => GenerateCreateUseCase(sl()));
   sl.registerLazySingleton(() => GenerateUpdateUseCase(sl()));
   sl.registerLazySingleton(() => GenerateDeleteUseCase(sl()));
+  sl.registerLazySingleton(() => GenerateSaveScoreUseCase(sl()));
 
   sl.registerFactory(() => GenerateBloc());
 }

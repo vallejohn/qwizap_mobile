@@ -45,7 +45,10 @@ android {
         create("release") {
             keyAlias = keystoreProperties["keyAlias"] as String?
             keyPassword = keystoreProperties["keyPassword"] as String?
-            storeFile = file(keystoreProperties["storeFile"] as String)
+            val storeFileProperty = keystoreProperties["storeFile"] as String?
+            if (storeFileProperty != null) {
+                storeFile = file(storeFileProperty)
+            }
             storePassword = keystoreProperties["storePassword"] as String?
         }
     }
@@ -54,7 +57,9 @@ android {
         getByName("release") {
             isMinifyEnabled = false
             isShrinkResources = false
-            signingConfig = signingConfigs.getByName("release")
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 }

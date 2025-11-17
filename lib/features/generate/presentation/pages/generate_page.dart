@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:logger/logger.dart';
 import 'package:smooth_corner/smooth_corner.dart';
 import '../../../../core/di/setup_locator.dart';
 import '../../../../core/services/admob_service.dart';
 import '../../../../src/qwizap/presentation/blocs/timer/timer_bloc.dart';
+import '../../../../src/qwizap/data/models/question_model.dart';
 import '../../core/params/generate_params.dart';
 import '../bloc/generate_bloc.dart';
 
@@ -18,18 +20,61 @@ class GeneratePage extends StatefulWidget {
 }
 
 class _GeneratePageState extends State<GeneratePage> {
-  final int _duration = 60;
+  final int _answeringDuration = 60;
+  final _logger = Logger();
   BannerAd? _bannerAd;
+  InterstitialAd? _interstitialAd;
 
   @override
   void initState() {
     super.initState();
     _bannerAd = AdMobService.instance.createBannerAd();
+    _loadInterstitialAd();
   }
+
+  void _loadInterstitialAd() {
+    _logger.i('Loading interstitial ad...');
+    AdMobService.instance.createInterstitialAd(
+      onAdLoaded: (ad) {
+        _logger.i('Interstitial ad loaded successfully');
+        if (mounted) {
+          setState(() {
+            _interstitialAd = ad;
+          });
+        }
+      },
+      onAdFailedToLoad: (error) {
+        // Log error for debugging, but don't block quiz flow
+        _logger.e('Interstitial ad failed to load: ${error.message} (code: ${error.code})');
+        if (mounted) {
+          setState(() {
+            _interstitialAd = null;
+          });
+        }
+      },
+    );
+  }
+
+  void _showInterstitialAd() {
+    // Show interstitial ad after quiz is completed
+    _logger.i('Quiz completed. Checking if interstitial ad is ready...');
+    if (_interstitialAd != null) {
+      _logger.i('Showing interstitial ad after quiz completion');
+      AdMobService.instance.showInterstitialAd(_interstitialAd);
+      // Clear the current ad
+      setState(() {
+        _interstitialAd = null;
+      });
+    } else {
+      _logger.w('Interstitial ad not loaded yet');
+    }
+  }
+
 
   @override
   void dispose() {
     _bannerAd?.dispose();
+    _interstitialAd?.dispose();
     super.dispose();
   }
 
@@ -43,15 +88,34 @@ class _GeneratePageState extends State<GeneratePage> {
             listenWhen: (prev, cur) => prev.fetchStatus != cur.fetchStatus,
             listener: (context, state) {
               if (state.fetchStatus == GenerateFetchStatus.failure) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                ));
+                // Show general error toast
+                final textStyle = Theme.of(context).textTheme;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Failed to generate questions. Please try again.',
+                      style: textStyle.bodyLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    backgroundColor: const Color(0xff950000),
+                    behavior: SnackBarBehavior.floating,
+                    shape: SmoothRectangleBorder(
+                      smoothness: 1,
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    margin: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  ),
+                );
+                // Navigate back to category selection page
+                context.pop();
               }
 
               if (state.fetchStatus == GenerateFetchStatus.success) {
                 BlocProvider.of<TimerBloc>(context)
-                    .add(TimerEvent.started(_duration));
+                    .add(TimerEvent.started(_answeringDuration));
               }
             },
           ),
@@ -68,9 +132,18 @@ class _GeneratePageState extends State<GeneratePage> {
             prev.currentQuestion?.question != cur.currentQuestion?.question,
             listener: (context, state) {
               BlocProvider.of<TimerBloc>(context)
-                  .add(TimerEvent.started(_duration));
+                  .add(TimerEvent.started(_answeringDuration));
             },
-          )
+          ),
+          BlocListener<GenerateBloc, GenerateState>(
+            listenWhen: (prev, cur) => prev.fetchStatus != cur.fetchStatus,
+            listener: (context, state) {
+              if (state.fetchStatus == GenerateFetchStatus.finished) {
+                // Show interstitial ad after quiz is completed
+                _showInterstitialAd();
+              }
+            },
+          ),
         ], 
         child: Scaffold(
           body: BlocBuilder<GenerateBloc, GenerateState>(
@@ -123,7 +196,7 @@ class _GeneratePageState extends State<GeneratePage> {
 
   Widget _finishedPage(GenerateBloc bloc) {
     final textStyle = Theme.of(context).textTheme;
-    int total = bloc.state.data.fold(0, (total, q) => total + q.score);
+    final total = bloc.state.totalScore;
 
     return ListView(
       padding: const EdgeInsets.all(20),
@@ -131,7 +204,7 @@ class _GeneratePageState extends State<GeneratePage> {
         parent: AlwaysScrollableScrollPhysics(),
       ),
       children: [
-        const SizedBox(height: 200,),
+        const SizedBox(height: 100,),
         Align(
           alignment: Alignment.center,
           child: Text(
@@ -152,7 +225,21 @@ class _GeneratePageState extends State<GeneratePage> {
             ),
           ),
         ),
-        const SizedBox(height: 50,),
+        const SizedBox(height: 40,),
+        Text(
+          'Questions Review',
+          style: textStyle.titleLarge?.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 20,),
+        ...bloc.state.data.asMap().entries.map((entry) {
+          final index = entry.key;
+          final question = entry.value;
+          return _buildQuestionItem(question, index + 1, textStyle);
+        }),
+        const SizedBox(height: 30,),
         FilledButton(
           onPressed: () {
             context.go('/');
@@ -166,8 +253,100 @@ class _GeneratePageState extends State<GeneratePage> {
               ),
             ),
           ),
-        )
+        ),
+        const SizedBox(height: 20,),
       ],
+    );
+  }
+
+  Widget _buildQuestionItem(Question question, int questionNumber, TextTheme textStyle) {
+    final isCorrect = question.selectedAnswer == question.answer;
+    final correctColor = const Color(0xff00954F);
+    final wrongColor = const Color(0xff950000);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.09),
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(
+          color: isCorrect ? correctColor : wrongColor,
+          width: 2,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isCorrect ? correctColor : wrongColor,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isCorrect ? Icons.check : Icons.close,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Question $questionNumber',
+                      style: textStyle.titleMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            question.question,
+            style: textStyle.titleMedium?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Your answer: ${question.selectedAnswer}',
+                  style: textStyle.bodyLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (!isCorrect) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Correct answer: ${question.answer}',
+                    style: textStyle.bodyLarge?.copyWith(
+                      color: correctColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -201,7 +380,7 @@ class _GeneratePageState extends State<GeneratePage> {
                 ((duration / 60).floor()).toString().padLeft(2, '0');
                 final secondsStr = (duration % 60).toString().padLeft(2, '0');
 
-                final totalDuration = _duration;
+                final totalDuration = _answeringDuration;
                 final progress = (totalDuration - duration) / totalDuration;
 
                 return Row(
@@ -290,7 +469,7 @@ class _GeneratePageState extends State<GeneratePage> {
                         GenerateEvent.onAnswerSelected(
                             answer: choice,
                             remainingTime: remainingTime,
-                            duration: _duration),
+                            duration: _answeringDuration),
                       );
                     }
                   },

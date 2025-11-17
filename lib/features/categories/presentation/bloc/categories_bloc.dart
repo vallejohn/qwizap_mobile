@@ -1,8 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:qwizap_mobile/src/qwizap/data/models/question_category.dart';
+import '../../../../core/services/score_storage_service.dart';
 import '../../core/params/categories_params.dart';
-import '../../data/models/categories_model.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../domain/usecases/categories_usecase.dart';
@@ -16,12 +16,14 @@ class CategoriesBloc extends Bloc<CategoriesEvent, CategoriesState> {
   final _createUseCase = GetIt.instance<CategoriesCreateUseCase>();
   final _updateUseCase = GetIt.instance<CategoriesUpdateUseCase>();
   final _deleteUseCase = GetIt.instance<CategoriesDeleteUseCase>();
+  final _scoreStorageService = GetIt.instance<ScoreStorageService>();
 
   CategoriesBloc() : super(const CategoriesState()) {
     on<_Fetch>(_onFetch);
     on<_Create>(_onCreate);
     on<_Update>(_onUpdate);
     on<_Delete>(_onDelete);
+    on<_LoadScores>(_onLoadScores);
   }
 
   Future<void> _onFetch(_Fetch event, Emitter<CategoriesState> emit) async {
@@ -34,12 +36,16 @@ class CategoriesBloc extends Bloc<CategoriesEvent, CategoriesState> {
           message: error.when(apiException: (e) => e.message),
         ),
       ),
-      (data) => emit(
-        state.copyWith(
-          fetchStatus: CategoriesFetchStatus.success,
-          data: data.data?? [],
-        ),
-      ),
+      (data) {
+        emit(
+          state.copyWith(
+            fetchStatus: CategoriesFetchStatus.success,
+            data: data.data?? [],
+          ),
+        );
+        // Load scores after categories are fetched
+        add(const CategoriesEvent.loadScores());
+      },
     );
   }
 
@@ -83,6 +89,16 @@ class CategoriesBloc extends Bloc<CategoriesEvent, CategoriesState> {
       ),
       (data) => emit(state.copyWith(deleteStatus: CategoriesDeleteStatus.success)),
     );
+  }
+
+  Future<void> _onLoadScores(_LoadScores event, Emitter<CategoriesState> emit) async {
+    try {
+      final scores = await _scoreStorageService.getAllScores();
+      emit(state.copyWith(categoryScores: scores));
+    } catch (e) {
+      // Silently fail - scores are optional, don't block UI
+      // Could emit an error state if needed
+    }
   }
 }
 

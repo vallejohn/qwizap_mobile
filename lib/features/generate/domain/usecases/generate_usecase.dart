@@ -47,4 +47,15 @@ class GenerateDeleteUseCase extends UseCaseWithParams<bool, GenerateDeleteParams
   Future<Either<Failure, bool>> call(GenerateDeleteParams param) {
     return _repository.delete(param);
   }
+}
+
+class GenerateSaveScoreUseCase extends UseCaseWithParams<bool, GenerateSaveScoreParams>{
+  final GenerateRepository _repository;
+
+  GenerateSaveScoreUseCase(this._repository);
+
+  @override
+  Future<Either<Failure, bool>> call(GenerateSaveScoreParams param) {
+    return _repository.saveScore(param);
+  }
 }  

@@ -7,4 +7,5 @@ abstract class GenerateRepository {
   Future<Either<Failure, bool>> create(GenerateCreateParams param);
   Future<Either<Failure, bool>> update(GenerateUpdateParams param);
   Future<Either<Failure, bool>> delete(GenerateDeleteParams param);
+  Future<Either<Failure, bool>> saveScore(GenerateSaveScoreParams param);
 }
