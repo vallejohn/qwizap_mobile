@@ -93,7 +93,7 @@ class _CategoriesPageState extends State<CategoriesPage> with WidgetsBindingObse
                             backgroundColor: WidgetStatePropertyAll(Colors.white.withOpacity(0.09))
                         ),
                         onPressed: () {
-                          context.go('/quiz_proper/${category.name}');
+                          context.pushNamed('quiz_proper', pathParameters: {'category': category.name});
                         },
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,

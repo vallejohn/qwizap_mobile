@@ -88,10 +88,29 @@ class _GeneratePageState extends State<GeneratePage> {
             listenWhen: (prev, cur) => prev.fetchStatus != cur.fetchStatus,
             listener: (context, state) {
               if (state.fetchStatus == GenerateFetchStatus.failure) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                ));
+                // Show general error toast
+                final textStyle = Theme.of(context).textTheme;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Failed to generate questions. Please try again.',
+                      style: textStyle.bodyLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    backgroundColor: const Color(0xff950000),
+                    behavior: SnackBarBehavior.floating,
+                    shape: SmoothRectangleBorder(
+                      smoothness: 1,
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    margin: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  ),
+                );
+                // Navigate back to category selection page
+                context.pop();
               }
 
               if (state.fetchStatus == GenerateFetchStatus.success) {
