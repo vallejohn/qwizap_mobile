@@ -1,23 +1,24 @@
- import 'dart:convert';
+import 'dart:convert';
 
-import 'package:logger/logger.dart';
 import 'package:qwizap_mobile/src/qwizap/data/models/question_model.dart';
 
 import '../../../../core/exceptions/api_exception.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/network/api_service.dart';
+import '../../../../core/services/score_storage_service.dart';
 import '../../core/params/generate_params.dart';
-import '../models/generate_model.dart';
 
 abstract class GenerateRemoteDataSource {
   Future<GenerateOperationResult> fetch(GenerateFetchParams param);
   Future<bool> create(GenerateCreateParams param);
   Future<bool> update(GenerateUpdateParams param);
   Future<bool> delete(GenerateDeleteParams param);
+  Future<bool> saveScore(GenerateSaveScoreParams param);
 }
 
 class GenerateRemoteDataSourceImpl implements GenerateRemoteDataSource {
   final apiService = ApiService();
+  final scoreStorageService = ScoreStorageService();
 
   @override
   Future<GenerateOperationResult> fetch(GenerateFetchParams param) async {
@@ -43,35 +44,22 @@ class GenerateRemoteDataSourceImpl implements GenerateRemoteDataSource {
             "items": {
               "type": "OBJECT",
               "properties": {
-                "id": { "type": "STRING" },
                 "question": { "type": "STRING" },
                 "choices": {
                   "type": "ARRAY",
-                  "items": { "type": "STRING" },
-                  "minItems": 4
+                  "items": { "type": "STRING" }
                 },
-                "correctIndex": { "type": "INTEGER" },
                 "answer": { "type": "STRING" },
-                "explanation": { "type": "STRING" },
                 "difficulty": {
                   "type": "STRING",
                   "enum": ["easy", "medium", "hard"]
                 }
               },
-              "required": ["id", "question", "choices", "correctIndex", "answer", "explanation", "difficulty"],
-              "propertyOrdering": [
-                "id",
-                "question",
-                "choices",
-                "correctIndex",
-                "answer",
-                "explanation",
-                "difficulty"
-              ]
+              "required": ["question", "choices", "answer", "difficulty"]
             }
           },
           "temperature": 0.2,
-          "maxOutputTokens": 2048
+          "maxOutputTokens": 1024
         }
       }
     );
@@ -135,6 +123,16 @@ class GenerateRemoteDataSourceImpl implements GenerateRemoteDataSource {
     }
 
     return true;
+  }
+
+  @override
+  Future<bool> saveScore(GenerateSaveScoreParams param) async {
+    try {
+      await scoreStorageService.saveScore(param.category, param.score);
+      return true;
+    } catch (e) {
+      throw ApiException(message: 'Failed to save score: $e');
+    }
   }
 }
 

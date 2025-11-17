@@ -14,6 +14,7 @@ class CategoriesState with _$CategoriesState {
     @Default(CategoriesDeleteStatus.initial) CategoriesDeleteStatus deleteStatus,
     @Default('') String message,
     @Default([]) List<QuestionCategory> data,
+    @Default({}) Map<String, int> categoryScores,
   }) = _CategoriesState;
 }
 

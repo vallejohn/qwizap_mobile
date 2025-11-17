@@ -12,6 +12,7 @@ class Question with _$Question {
     @Default('') String selectedAnswer,
     @Default(0) int score,
     @Default('') String difficulty,
+    @Default(0) int readingDuration,
   }) = _Question;
 
   factory Question.fromJson(Map<String, dynamic> json) => _$QuestionFromJson(json);

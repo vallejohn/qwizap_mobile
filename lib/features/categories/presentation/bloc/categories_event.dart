@@ -6,4 +6,5 @@ class CategoriesEvent with _$CategoriesEvent {
   const factory CategoriesEvent.create(CategoriesCreateParams param) = _Create;
   const factory CategoriesEvent.update(CategoriesUpdateParams param) = _Update;
   const factory CategoriesEvent.delete(CategoriesDeleteParams param) = _Delete;
+  const factory CategoriesEvent.loadScores() = _LoadScores;
 }
